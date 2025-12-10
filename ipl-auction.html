@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>IPL 2026 Mega Auction - Live Viewer + Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="https://iplstatic.s3.amazonaws.com/ipl/logo.png" type="image/png">
+<style>
+:root {
+  --bg-main: #f3f4f8;
+  --bg-card: #ffffff;
+  --bg-dark: #0f172a;
+  --card-dark: #1e293b;
+  --text-light: #111111;
+  --text-dark: #e2e8f0;
+  --accent-red: #ff3b30;
+  --accent-orange: #ff6d00;
+  --accent-green: #00c853;
+  --accent-gold: #fbbf24;
+  --accent-purple: #a855f7;
+  --accent-blue: #3b82f6;
+  --text-muted: #7a7a7a;
+  --border-soft: #e0e3eb;
+  --border-dark: #334155;
+  --radius-lg: 18px;
+  --shadow-soft: 0 4px 12px rgba(0,0,0,0.08);
+  --font-main: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { 
+  margin: 0; 
+  font-family: var(--font-main); 
+  background: var(--bg-main); 
+  color: var(--text-light);
+  transition: background 0.3s, color 0.3s;
+}
+body.dark { 
+  background: var(--bg-dark); 
+  color: var(--text-dark);
+}
+
+.app-shell { max-width: 1400px; margin: 0 auto; padding: 12px 12px 60px; }
+
+/* Header Switch */
+.top-switch-bar {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.brand-title { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, var(--accent-gold), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.switch-buttons { display: flex; gap: 8px; }
+.switch-btn {
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border-soft);
+  background: #fff; font-size: 12px; cursor: pointer; transition: all 0.2s;
+}
+body.dark .switch-btn { background: var(--card-dark); border-color: var(--border-dark); color: var(--text-dark); }
+.switch-btn.active { background: var(--accent-purple); color: #fff; }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--bg-card); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft); padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border-soft);
+}
+body.dark .card { background: var(--card-dark); border-color: var(--border-dark); }
+
+/* Top Bar */
+.top-bar {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+}
+.status-pill {
+  display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+  background: #e8f9ef; color: var(--accent-green); border-radius: 999px; font-size: 14px; font-weight: 600;
+}
+body.dark .status-pill { background: rgba(16,185,129,0.2); }
+.status-pill-dot { width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; }
+.clock-box { padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 999px; font-size: 14px; font-weight: 600; }
+body.dark .clock-box { background: var(--card-dark); border-color: var(--border-dark); }
+
+/* Tabs */
+.tabs-row {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;
+}
+.tab-chip {
+  padding: 10px 20px; border-radius: 999px; border: none; background: var(--card-dark); color: var(--text-dark);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.tab-chip.live { background: var(--accent-red); }
+.tab-chip.active {
+  background: var(--accent-purple); box-shadow: 0 4px 12px rgba(168,85,247,0.4);
+}
+
+/* Grid */
+.main-grid {
+  display: grid; grid-template-columns: 1fr 380px; gap: 20px;
+}
+@media (max-width: 968px) { .main-grid { grid-template-columns: 1fr; } }
+
+/* Player Card */
+.player-main {
+  display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;
+}
+.player-photo-frame {
+  width: 140px; height: 140px; background: #f0f0f0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; color: #999;
+}
+body.dark .player-photo-frame { background: #334155; color: #64748b; }
+.player-name { font-size: 28px; font-weight: 700; margin: 4px 0; }
+.player-meta-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; font-size: 13px;
+}
+@media (max-width: 767px) { .player-meta-grid { grid-template-columns: 1fr 1fr; } }
+.meta-value.green { color: var(--accent-green); font-weight: 600; }
+
+/* Bid Card */
+.bid-card {
+  background: linear-gradient(135deg, var(--accent-orange), #ff8c42); color: #fff; border-radius: 16px; padding: 20px;
+  display: flex; justify-content: space-between; align-items: center; margin: 20px 0;
+}
+.bid-amount { font-size: 32px; font-weight: 700; }
+.team-logo {
+  width: 60px; height: 60px; background: #fff; color: var(--accent-dark);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px;
+}
+
+/* Tags & Activity */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-pill {
+  padding: 8px 16px; background: #f1f1f1; border-radius: 999px; font-size: 12px; font-weight: 500;
+}
+body.dark .tag-pill { background: #334155; }
+.activity-list {
+  list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; font-size: 12px;
+}
+.activity-list li {
+  display: flex; justify-content: space-between; padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+body.dark .activity-list li { border-bottom-color: var(--border-dark); }
+.activity-amount { color: var(--accent-green); font-weight: 600; }
+
+/* Tables */
+.team-table, .player-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.team-table th, .team-table td, .player-table th, .player-table td {
+  border: 1px solid #f0f0f0; padding: 12px 8px; text-align: center;
+}
+body.dark .team-table th, body.dark .team-table td, body.dark .player-table th, body.dark .player-table td { border-color: var(--border-dark); }
+.team-table th, .player-table th { background: #fafafa; }
+body.dark .team-table th, body.dark .player-table th { background: #1e293b; }
+
+/* Buttons */
+.btn {
+  padding: 12px 24px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;
+  font-size: 14px; transition: all 0.2s; margin: 4px;
+}
+.btn-green { background: var(--accent-green); color: white; }
+.btn-red { background: var(--accent-red); color: white; }
+.btn-orange { background: var(--accent-orange); color: white; }
+.btn-purple { background: var(--accent-purple); color: white; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+/* Admin Panel */
+.admin-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 20px;
+}
+.admin-panel { display: none; }
+
+/* Login */
+.login-panel {
+  max-width: 450px; margin: 60px auto; text-align: center;
+}
+input {
+  width: 100%; padding: 16px; margin: 12px 0; border-radius: 12px; border: 1px solid #ccc;
+  font-size: 16px; background: white; color: var(--text-light);
+}
+body.dark input { background: #334155; border-color: var(--border-dark); color: var(--text-dark); }
+.help-text { margin-top: 20px; font-size: 13px; color: var(--text-muted); }
+
+/* Not Started */
+.not-started {
+  text-align: center; padding: 40px; background: linear-gradient(135deg, #7f1d1d, #991b1b);
+  color: white; border-radius: 20px; font-size: 1.5rem; font-weight: 700; margin: 30px 0;
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- Header Switch -->
+  <div class="top-switch-bar">
+    <div class="brand-title">IPL 2026 MEGA AUCTION</div>
+    <div class="switch-buttons">
+      <button class="switch-btn active" data-view="viewer">Live Viewer</button>
+      <button class="switch-btn" data-view="login">Login</button>
+    </div>
+  </div>
+
+  <!-- LOGIN PANEL -->
+  <div id="loginPanel" class="panel">
+    <div class="login-panel card">
+      <h2>Welcome to IPL Auction</h2>
+      <p style="color:var(--text-muted);margin-bottom:20px;">Admin / Team Login Required</p>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <button class="btn btn-orange" onclick="doLogin()">Login</button>
+      <div class="help-text">
+        <strong>Admin:</strong> qwertyuiop / bluezone0025<br>
+        <strong>Teams:</strong> Check your invite
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN AUCTION PANEL -->
+  <div id="viewerPanel" class="panel active">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div>
+        <div style="font-size:18px;font-weight:700;">Live Auction Center</div>
+        <div style="font-size:13px;color:var(--text-muted);" id="modeLabel">Viewer Mode • Real-time Updates</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div class="status-pill">
+          <div class="status-pill-dot"></div>
+          <span id="auctionStatusLabel">NOT STARTED</span>
+        </div>
+        <div class="clock-box">Time left: <span id="roundTimer">01:00</span></div>
+      </div>
+    </div>
+
+    <!-- Not Started Banner -->
+    <div class="not-started" id="notStartedBanner">
+      AUCTION NOT STARTED<br>
+      <small style="font-size:0.8em;opacity:0.9;">Waiting for Admin to Start Auction</small>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-row">
+      <button class="tab-chip live active" data-tab="live">LIVE TRACK</button>
+      <button class="tab-chip" data-tab="teams">TEAMS</button>
+      <button class="tab-chip" data-tab="players">PLAYERS</button>
+      <button class="tab-chip" data-tab="sold">SOLD</button>
+      <button class="tab-chip" data-tab="unsold">UNSOLD</button>
+    </div>
+
+    <!-- Main Content -->
+    <div id="auctionView">
+
+      <!-- Current Player Card -->
+      <div class="main-grid">
+
+        <div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <div style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--accent-green);">
+                <div class="status-pill-dot"></div> LIVE PLAYER
+              </div>
+              <div style="font-size:13px;color:var(--text-muted);">Player <span id="playerIndex">1</span> of <span id="playerTotal">250</span></div>
+            </div>
+
+            <div class="player-main">
+              <div class="player-photo-frame" id="playerInitials">MS</div>
+              <div>
+                <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">CURRENT PLAYER</div>
+                <div class="player-name" id="playerName">Mitchell Starc</div>
+                <div class="player-meta-grid">
+                  <div><div style="font-size:11px;color:var(--text-muted);">Base Price</div><div class="meta-value green" id="basePrice">₹ 2 Cr</div></div>
+                  <div><div style="font-size:11px;color:var(--text-muted);">Age</div><div id="age">34</div></div>
+                  <div><div style="font-size:11px;color:var(--text-muted);">Country</div><div id="country">Australia</div></div>
+                  <div><div style="font-size:11px;color:var(--text-muted);">Role</div><div id="category">Bowler</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bid-card">
+              <div>
+                <div style="font-size:13px;opacity:0.95;">Highest Bid</div>
+                <div class="bid-amount" id="highestBid">₹ 24.75 Cr</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="team-logo" id="bidTeamShort">KKR</div>
+                <div style="font-size:12px;opacity:0.9;">by</div>
+                <div id="bidTeam" style="font-weight:600;">KOLKATA KNIGHT RIDERS</div>
+              </div>
+            </div>
+
+            <div style="font-size:14px;font-weight:600;margin:20px 0 12px;">Interested Teams</div>
+            <div class="tag-row" id="interestedTeams"></div>
+
+            <!-- Admin Action Buttons -->
+            <div id="actionButtons" style="display:none;">
+              <button class="btn btn-green" onclick="soldToCurrent()">SOLD</button>
+              <button class="btn btn-red" onclick="unsoldCurrent()">UNSOLD</button>
+              <button class="btn btn-purple" onclick="nextPlayerAdmin()">NEXT PLAYER</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Live Bid Activity</div>
+            <ul class="activity-list" id="activityList"></ul>
+          </div>
+
+          <div class="card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Team Purse & Slots</div>
+            <table class="team-table" id="teamTable">
+              <thead><tr><th>Team</th><th>Purse</th><th>Slots</th><th>OS</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Full Players Table -->
+      <div class="card" id="playersTableView" style="display:none;">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px;">ALL PLAYERS LIST</div>
+        <div style="max-height:500px;overflow-y:auto;">
+          <table class="player-table" id="fullPlayerTable">
+            <thead><tr><th>#</th><th>Player</th><th>Country</th><th>Role</th><th>Base</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="card admin-panel" id="adminPanel">
+      <h2 style="color:var(--accent-red);text-align:center;font-size:24px;margin-bottom:20px;">ADMIN CONTROL PANEL</h2>
+      
+      <div style="display:flex;gap:12px;margin-bottom:20px;justify-content:center;">
+        <button class="btn btn-green" onclick="startAuction()">START AUCTION</button>
+        <button class="btn btn-red" onclick="stopAuction()">STOP AUCTION</button>
+        <button class="btn btn-orange" onclick="resetCurrentBid()">RESET BID</button>
+      </div>
+
+      <div class="admin-grid">
+        <button class="btn btn-green" onclick="soldToCurrent()">SOLD Current</button>
+        <button class="btn btn-red" onclick="unsoldCurrent()">Mark UNSOLD</button>
+        <button class="btn btn-purple" onclick="nextPlayerAdmin()">NEXT PLAYER</button>
+        <button class="btn btn-orange" onclick="addBid(0.25)">+₹0.25 Cr</button>
+        <button class="btn btn-orange" onclick="addBid(0.50)">+₹0.50 Cr</button>
+        <button class="btn btn-orange" onclick="addBid(1)">+₹1 Cr</button>
+        <button class="btn btn-orange" onclick="addBid(2)">+₹2 Cr</button>
+      </div>
+
+      <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border-soft);">
+        <h3 style="margin-bottom:12px;">Team Password Manager</h3>
+        <select id="teamSelect" style="padding:10px;margin-right:10px;border-radius:8px;border:1px solid var(--border-soft);"></select>
+        <input type="text" id="newPass" placeholder="New Password" style="width:200px;padding:10px;border-radius:8px;border:1px solid var(--border-soft);" />
+        <button class="btn btn-purple" onclick="changeTeamPass()" style="margin-left:10px;">Update Password</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// === COMPREHENSIVE DATA ===
+let players = [
+  {name:"Mitchell Starc",initials:"MS",basePrice:"2.00",base_price_crore:2.00,age:34,country:"Australia",role:"Bowler",status:"waiting",highestBid:"2.00",bidTeamShort:"--",bidTeam:"No bids",interested:["CSK","KKR","SRH"],activity:[{team:"CSK",amount:"₹ 2 Cr"}]},
+  {name:"Pat Cummins",initials:"PC",basePrice:"2.00",base_price_crore:2.00,age:32,country:"Australia",role:"All-Rounder",status:"waiting",highestBid:"2.00",bidTeamShort:"--",bidTeam:"No bids",interested:["SRH","RCB"],activity:[{team:"SRH",amount:"₹ 2 Cr"}]},
+  {name:"Rohit Sharma",initials:"RS",basePrice:"2.00",base_price_crore:2.00,age:37,country:"India",role:"Batsman",status:"waiting",highestBid:"2.00",bidTeamShort:"--",bidTeam:"No bids",interested:["CSK","MI"],activity:[{team:"CSK",amount:"₹ 2 Cr"}]}
+  // Add more players or load from data.json
+];
+
+let teams = [
+  {team_name:"Chennai Super Kings",username:"csk",password:"csk123",purse_crores:90,overall_slots_left:15,overseas_slots_left:4},
+  {team_name:"Mumbai Indians",username:"mi",password:"mi123",purse_crores:85,overall_slots_left:12,overseas_slots_left:3},
+  {team_name:"Kolkata Knight Riders",username:"kkr",password:"kkr123",purse_crores:95,overall_slots_left:18,overseas_slots_left:5},
+  {team_name:"Royal Challengers Bengaluru",username:"rcb",password:"rcb123",purse_crores:88,overall_slots_left:14,overseas_slots_left:4},
+  {team_name:"Sunrisers Hyderabad",username:"srh",password:"srh123",purse_crores:92,overall_slots_left:16,overseas_slots_left:3}
+];
+
+let currentIndex = 0;
+let isAdmin = false;
+let auctionStarted = false;
+let timerRunning = false;
+let currentTimer = 60;
+let timerInterval;
+let highestBidder = null;
+
+// Load external data if available
+async function loadData() {
+  try {
+    const response = await fetch('data.json');
+    const data = await response.json();
+    players = data.players || players;
+    teams = data.teams || teams;
+    renderAll();
+  } catch(e) {
+    console.log('Using default data');
+    renderAll();
+  }
+}
+
+// Login
+function doLogin() {
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value;
+
+  if (user === "qwertyuiop" && pass === "bluezone0025") {
+    isAdmin = true;
+    document.getElementById("modeLabel").textContent = "ADMIN MODE • Full Control";
+    document.getElementById("adminPanel").style.display = "block";
+    document.getElementById("actionButtons").style.display = "flex";
+    alert("Welcome Admin! Full control activated.");
+  } else {
+    const team = teams.find(t => t.username === user && t.password === pass);
+    if (team) {
+      document.getElementById("modeLabel").textContent = `TEAM MODE • ${team.team_name}`;
+      alert(`Welcome ${team.team_name}!`);
+    } else {
+      alert("Invalid credentials");
+      return;
+    }
+  }
+
+  document.getElementById("loginPanel").classList.remove("active");
+  document.getElementById("viewerPanel").classList.add("active");
+}
+
+// Auction Controls
+function startAuction() {
+  if (!isAdmin) return alert("Admin only!");
+  auctionStarted = true;
+  document.getElementById("notStartedBanner").classList.add("hidden");
+  document.getElementById("auctionStatusLabel").textContent = "LIVE";
+  showPlayer(0);
+  startTimer();
+}
+
+function stopAuction() {
+  if (!isAdmin) return;
+  auctionStarted = false;
+  clearInterval(timerInterval);
+  document.getElementById("auctionStatusLabel").textContent = "STOPPED";
+}
+
+function nextPlayerAdmin() {
+  if (!isAdmin) return;
+  nextPlayer();
+}
+
+function soldToCurrent() {
+  if (!isAdmin) return;
+  players[currentIndex].status = "sold";
+  document.getElementById(`status-${currentIndex}`).textContent = "SOLD";
+  document.getElementById(`status-${currentIndex}`).style.color = "var(--accent-gold)";
+  nextPlayer();
+}
+
+function unsoldCurrent() {
+  if (!isAdmin) return;
+  players[currentIndex].status = "unsold";
+  document.getElementById(`status-${currentIndex}`).textContent = "UNSOLD";
+  document.getElementById(`status-${currentIndex}`).style.color = "var(--accent-red)";
+  nextPlayer();
+}
+
+function resetCurrentBid() {
+  if (!isAdmin) return;
+  const player = players[currentIndex];
+  player.highestBid = player.basePrice;
+  renderPlayer(currentIndex);
+}
+
+function addBid(amount) {
+  if (!isAdmin) return;
+  const player = players[currentIndex];
+  player.highestBid = parseFloat(player.highestBid) + amount;
+  const randomTeam = teams[Math.floor(Math.random() * teams.length)];
+  player.bidTeamShort = randomTeam.team_name.split(" ").pop().slice(0,3).toUpperCase();
+  player.bidTeam = randomTeam.team_name;
+  renderPlayer(currentIndex);
+  addActivity(randomTeam.team_name, `₹ ${player.highestBid.toFixed(2)} Cr`);
+}
+
+function changeTeamPass() {
+  if (!isAdmin) return alert("Admin 
